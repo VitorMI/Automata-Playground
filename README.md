@@ -102,12 +102,6 @@ Certifique-se de fornecer um arquivo JSON válido para definir o autômato. Um e
 }
 ```
 
-## Alunos
-
-1. [Vitor Miranda](https://github.com/VitorMI)
-2. [Alisson Amarante](https://github.com/alissonramarante)
-3. [Gabriel Vilar](https://github.com/Gakjvc)
-
 ## Observações
 
 - Certifique-se de que os caminhos dos arquivos JSON e as sequências de entrada estejam corretos.
