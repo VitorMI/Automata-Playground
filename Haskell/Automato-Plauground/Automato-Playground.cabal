@@ -1,0 +1,27 @@
+cabal-version:      3.0
+name:               Automato-Playground
+version:            0.1.0.0
+license:            BSD-3-Clause
+license-file:       LICENSE
+author:             grupo6
+build-type:         Simple
+extra-doc-files:    CHANGELOG.md
+
+common warnings
+    ghc-options: -Wall
+
+executable Automato-Plauground
+    import:           warnings
+    main-is:          Main.hs
+    other-modules:
+        Automato,
+        Menu
+    build-depends:
+        base >= 4.7 && < 5,
+        aeson,
+        aeson-pretty,
+        bytestring,
+        containers,
+        text
+    hs-source-dirs:   app
+    default-language: Haskell2010
