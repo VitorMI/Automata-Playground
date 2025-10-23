@@ -19,6 +19,9 @@ import qualified Data.ByteString.Lazy as B -- Para manipular arquivos binários 
 import GHC.Generics (Generic) -- Para derivar instâncias de FromJSON e ToJSON automaticamente
 import Data.Set (Set, member) -- Para representar conjuntos (alfabeto e estados finais)
 import qualified Data.Map.Strict as Map -- Para representar transições como um mapa
+import qualified Data.Map as Map
+import qualified Data.Set as Set
+import Data.List (intercalate) -- Import para juntar strings com um separador
 
 -- Definição do tipo Automato
 data Automato = Automato
@@ -57,15 +60,39 @@ criarAutomato arquivo = do
 
 -- Função para imprimir informações detalhadas sobre o autômato
 imprimirAutomato :: Automato -> String
-imprimirAutomato automato =
-  "Alfabeto: " ++ show (alfabeto automato) ++ "\n" ++
-  "Estado Inicial: " ++ estadoInicial automato ++ "\n" ++
-  "Estado(s) Final(is): " ++ show (estadosFinais automato) ++ "\n" ++
-  "Transições:\n" ++
-  concatMap (\(estado, trans) ->
-               "  " ++ estado ++ " -> " ++ show trans ++ "\n")
-            (Map.toList (transicoes automato)) -- Converte as transições para string
+imprimirAutomato auto =
+  let
+    -- Função auxiliar para formatar um conjunto (Set) como { a, b, c }
+    formatarConjunto :: Set.Set String -> String
+    formatarConjunto s = "{ " ++ intercalate ", " (Set.toList s) ++ " }"
 
+    -- Função auxiliar para formatar todas as transições
+    -- A assinatura de tipo aqui foi corrigida para corresponder ao seu autômato
+    formatarTransicoes :: Map.Map String (Map.Map String String) -> String -- <- MUDANÇA 1
+    formatarTransicoes transMap =
+      let
+        todasAsTransicoes = concatMap formatarLinhaEstado (Map.toList transMap)
+      in unlines todasAsTransicoes
+      where
+        -- A assinatura desta função auxiliar também foi corrigida
+        formatarLinhaEstado :: (String, Map.Map String String) -> [String] -- <- MUDANÇA 2
+        formatarLinhaEstado (origem, mapaDeTransicoes) =
+          -- Agora, usamos Map.toList no mapa interno para obter a lista (símbolo, destino)
+          map (\(simbolo, destino) ->
+              "    δ(" ++ origem ++ ", " ++ simbolo ++ ") = " ++ destino
+          ) (Map.toList mapaDeTransicoes) -- <- MUDANÇA 3
+
+  in unlines [
+    "---------------------------------------",
+    "      INFORMAÇÕES DO AUTÔMATO          ",
+    "---------------------------------------",
+    "  - Alfabeto (Σ):      " ++ formatarConjunto (alfabeto auto),
+    "  - Estado Inicial:    " ++ estadoInicial auto,
+    "  - Estados Finais (F): " ++ formatarConjunto (estadosFinais auto),
+    "  - Funções de Transição (δ):",
+    formatarTransicoes (transicoes auto),
+    "---------------------------------------"
+  ]
 -- Função para testar uma palavra no autômato
 testePalavra :: Automato -> String -> IO ResultadoTeste
 testePalavra automato palavraTestada =
