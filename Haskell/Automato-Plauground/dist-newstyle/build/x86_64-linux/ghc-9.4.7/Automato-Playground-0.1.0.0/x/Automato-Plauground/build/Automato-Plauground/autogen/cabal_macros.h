@@ -60,6 +60,16 @@
   (major1) == 0 && (major2) <  6 || \
   (major1) == 0 && (major2) == 6 && (minor) <= 7)
 #endif /* MIN_VERSION_containers */
+/* package fgl-5.8.3.0 */
+#ifndef VERSION_fgl
+#define VERSION_fgl "5.8.3.0"
+#endif /* VERSION_fgl */
+#ifndef MIN_VERSION_fgl
+#define MIN_VERSION_fgl(major1,major2,minor) (\
+  (major1) <  5 || \
+  (major1) == 5 && (major2) <  8 || \
+  (major1) == 5 && (major2) == 8 && (minor) <= 3)
+#endif /* MIN_VERSION_fgl */
 /* package text-2.0.2 */
 #ifndef VERSION_text
 #define VERSION_text "2.0.2"

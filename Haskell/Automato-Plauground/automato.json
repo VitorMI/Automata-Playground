@@ -1,19 +1,21 @@
 {
-  "alfabeto": ["0", "1"],
+  "alfabeto": ["a", "b"],
   "estadoInicial": "q0",
-  "estadosFinais": ["q2"],
-  "transicoes": {
-    "q0": {
-      "0": "q1",
-      "1": "q0"
-    },
-    "q1": {
-      "0": "q2",
-      "1": "q0"
-    },
-    "q2": {
-      "0": "q2",
-      "1": "q0"
-    }
-  }
+  "estadosFinais": ["q0", "q1", "q_aba_3"],
+
+  "transicoes": [
+    { "origem": "q0", "simbolo": "a", "destino": "q0" },
+    { "origem": "q0", "simbolo": "b", "destino": "q1" },
+    { "origem": "q1", "simbolo": "b", "destino": "q1" },
+    { "origem": "q1", "simbolo": "a", "destino": "q_trap" },
+    { "origem": "q_trap", "simbolo": "a", "destino": "q_trap" },
+    { "origem": "q_trap", "simbolo": "b", "destino": "q_trap" },
+    { "origem": "q0", "simbolo": "a", "destino": "q_aba_1" },
+    { "origem": "q_aba_1", "simbolo": "b", "destino": "q_aba_2" },
+    { "origem": "q_aba_2", "simbolo": "a", "destino": "q_aba_3" },
+    { "origem": "q_aba_3", "simbolo": null, "destino": "q_e1" },
+    { "origem": "q_e1", "simbolo": null, "destino": "q_e2" },
+    { "origem": "q_e2", "simbolo": null, "destino": "q_e1" },
+    { "origem": "q_unreachable", "simbolo": "a", "destino": "q_unreachable" }
+  ]
 }
