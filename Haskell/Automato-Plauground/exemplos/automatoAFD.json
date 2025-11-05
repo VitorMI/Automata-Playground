@@ -1,11 +1,13 @@
 {
   "alfabeto": ["0", "1"],
-  "estadoInicial": "par",
-  "estadosFinais": ["par"],
+  "estadoInicial": "q0",
+  "estadosFinais": ["q2"],
   "transicoes": [
-    { "origem": "par", "simbolo": "0", "destino": "impar" },
-    { "origem": "par", "simbolo": "1", "destino": "par" },
-    { "origem": "impar", "simbolo": "0", "destino": "par" },
-    { "origem": "impar", "simbolo": "1", "destino": "impar" }
+    { "origem": "q0", "simbolo": "0", "destino": "q1" },
+    { "origem": "q0", "simbolo": "1", "destino": "q0" },
+    { "origem": "q1", "simbolo": "0", "destino": "q1" },
+    { "origem": "q1", "simbolo": "1", "destino": "q2" },
+    { "origem": "q2", "simbolo": "0", "destino": "q1" },
+    { "origem": "q2", "simbolo": "1", "destino": "q0" }
   ]
 }

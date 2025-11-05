@@ -44,40 +44,40 @@ Para suportar a natureza flexível dos AFNDs, o formato de entrada é uma lista 
 
 **Importante:** Transições-épsilon ($\epsilon$) são definidas usando `"simbolo": null` no arquivo JSON.
 
-### Exemplo de JSON (para `afnd_comeca_0_termina_1.json`)
+### Exemplo de JSON AFND
 
 ```json
 {
   "alfabeto": ["0", "1"],
   "estadoInicial": "q0",
-  "estadosFinais": ["q_final"],
+  "estadosFinais": ["q3"],
   "transicoes": [
-    
-    { "origem": "q0", "simbolo": null, "destino": "q_start" },
-
-    { "origem": "q_start", "simbolo": "0", "destino": "q_loop" },
-    
-    { "origem": "q_loop", "simbolo": "0", "destino": "q_loop" },
-    
-    { "origem": "q_loop", "simbolo": "1", "destino": "q_loop" },
-    
-    { "origem": "q_loop", "simbolo": "1", "destino": "q_final" }
+    { "origem": "q0", "simbolo": null, "destino": "q1" },
+    { "origem": "q0", "simbolo": null, "destino": "q2" },
+    { "origem": "q1", "simbolo": "0", "destino": "q1" },
+    { "origem": "q1", "simbolo": "0", "destino": "q3" },
+    { "origem": "q2", "simbolo": "1", "destino": "q2" },
+    { "origem": "q2", "simbolo": "1", "destino": "q3" },
+    { "origem": "q3", "simbolo": "0", "destino": "q3" },
+    { "origem": "q3", "simbolo": "1", "destino": "q3" }
   ]
 }
 ```
 
-### Exemplo de JSON (para `afd_zeros_pares.json`)
+### Exemplo de JSON AFD
 
 ```json
 {
   "alfabeto": ["0", "1"],
-  "estadoInicial": "par",
-  "estadosFinais": ["par"],
+  "estadoInicial": "q0",
+  "estadosFinais": ["q2"],
   "transicoes": [
-    { "origem": "par", "simbolo": "0", "destino": "impar" },
-    { "origem": "par", "simbolo": "1", "destino": "par" },
-    { "origem": "impar", "simbolo": "0", "destino": "par" },
-    { "origem": "impar", "simbolo": "1", "destino": "impar" }
+    { "origem": "q0", "simbolo": "0", "destino": "q1" },
+    { "origem": "q0", "simbolo": "1", "destino": "q0" },
+    { "origem": "q1", "simbolo": "0", "destino": "q1" },
+    { "origem": "q1", "simbolo": "1", "destino": "q2" },
+    { "origem": "q2", "simbolo": "0", "destino": "q1" },
+    { "origem": "q2", "simbolo": "1", "destino": "q0" }
   ]
 }
 ```
