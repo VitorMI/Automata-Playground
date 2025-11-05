@@ -1,0 +1,13 @@
+{
+  "alfabeto": ["0", "1"],
+  "estadoInicial": "q0",
+  "estadosFinais": ["q2"],
+  "transicoes": [
+    { "origem": "q0", "simbolo": "0", "destino": "q1" },
+    { "origem": "q0", "simbolo": "1", "destino": "q0" },
+    { "origem": "q1", "simbolo": "0", "destino": "q1" },
+    { "origem": "q1", "simbolo": "1", "destino": "q2" },
+    { "origem": "q2", "simbolo": "0", "destino": "q1" },
+    { "origem": "q2", "simbolo": "1", "destino": "q0" }
+  ]
+}

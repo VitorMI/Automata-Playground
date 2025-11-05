@@ -1,0 +1,15 @@
+{
+  "alfabeto": ["0", "1"],
+  "estadoInicial": "q0",
+  "estadosFinais": ["q3"],
+  "transicoes": [
+    { "origem": "q0", "simbolo": null, "destino": "q1" },
+    { "origem": "q0", "simbolo": null, "destino": "q2" },
+    { "origem": "q1", "simbolo": "0", "destino": "q1" },
+    { "origem": "q1", "simbolo": "0", "destino": "q3" },
+    { "origem": "q2", "simbolo": "1", "destino": "q2" },
+    { "origem": "q2", "simbolo": "1", "destino": "q3" },
+    { "origem": "q3", "simbolo": "0", "destino": "q3" },
+    { "origem": "q3", "simbolo": "1", "destino": "q3" }
+  ]
+}

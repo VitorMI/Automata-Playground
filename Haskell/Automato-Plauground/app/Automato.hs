@@ -16,7 +16,7 @@ module Automato
 where
 
 -- Importações necessárias
-import Data.Aeson (FromJSON, ToJSON, decode, object, (.=), Value(Null))
+import Data.Aeson (FromJSON, ToJSON, decode, object, (.=))
 import Data.Aeson.Encode.Pretty (encodePretty) -- Para gerar JSON formatado ("pretty")
 import qualified Data.ByteString.Lazy as B -- Para manipular arquivos binários (JSON)
 import GHC.Generics (Generic) -- Para derivar instâncias de FromJSON e ToJSON automaticamente
@@ -26,11 +26,8 @@ import Data.Map.Strict (Map) -- Para representar transições como um mapa
 import qualified Data.Map.Strict as Map
 import Data.List (intercalate, foldl') -- Import para juntar strings e usar foldl estrito
 import Data.Maybe (fromJust, mapMaybe) -- Funções auxiliares
-
--- MUDANÇA: Importações da biblioteca FGL (Functional Graph Library)
 import Data.Graph.Inductive.Graph (Node, LEdge, mkGraph, labNodes, lsuc, lab) -- Funções principais
 import Data.Graph.Inductive.PatriciaTree (Gr) -- Implementação concreta eficiente
-import Data.Graph.Inductive.Query.DFS (dfs) -- Para o fecho-épsilon
 
 
 -- Tipo auxiliar para uma única transição no JSON
@@ -56,21 +53,18 @@ data Automato = Automato
   , mapaDeNos      :: Map String Node    -- Mapeia "q0" -> 1 (ID interno do FGL)
   , mapaDeRotulos  :: Map Node String    -- Mapeia 1 -> "q0"
   } deriving (Show, Generic)
-  
--- 'Automato' não é mais uma instância de 'FromJSON' diretamente.
--- Nós o construiremos a partir do 'JsonAutomato'.
 
 data ResultadoTeste = ResultadoTeste
   { palavra          :: String
   , aceita           :: Bool
-  , estadosPercorridos :: [[String]] -- MUDANÇA: Agora é uma lista de *conjuntos* de estados
+  , estadosPercorridos :: [[String]]
   } deriving (Show, Generic)
 
 instance ToJSON ResultadoTeste -- Isso continua funcionando
 
 -- Constrói o tipo 'Automato' (com grafo FGL) a partir do 'JsonAutomato'
 converterParaGrafo :: JsonAutomato -> Automato
-converterParaGrafo JsonAutomato{..} = -- MUDANÇA: Usando RecordWildCards
+converterParaGrafo JsonAutomato{..} =
   let
     -- 1. Coletar todos os nomes de estados únicos
     --    'transicoes', 'estadoInicial', 'estadosFinais' são variáveis locais
@@ -124,7 +118,7 @@ criarAutomato arquivo = do
     Nothing       -> error "Erro ao carregar o autômato do JSON"
 
 imprimirAutomato :: Automato -> String
-imprimirAutomato Automato{..} = -- MUDANÇA: Usando RecordWildCards
+imprimirAutomato Automato{..} =
   let
     -- 'alfabeto', 'estadoInicial', 'estadosFinais', 'grafo' são variáveis locais
     formatarConjunto :: Set.Set String -> String
@@ -134,10 +128,10 @@ imprimirAutomato Automato{..} = -- MUDANÇA: Usando RecordWildCards
     formatarTransicoes g =
       let
         todosOsNos = labNodes g
-        linhasDeTransicao = concatMap (formatarLinhasDeNo g) todosOsNos
+        linhasDeTransicao = concatMap formatarLinhasDeNo todosOsNos
       in unlines linhasDeTransicao
       where
-        formatarLinhasDeNo g (no, rotuloOrigem) =
+        formatarLinhasDeNo (no, rotuloOrigem) =
           let sucessores = lsuc g no
           in map (formatarLinha rotuloOrigem) sucessores
         
@@ -197,36 +191,45 @@ mover g nos simbolo =
     moverNo n = Set.fromList [dest | (dest, Just s) <- lsuc g n, s == simbolo]
 
 -- Função de simulação principal
+-- Função de simulação principal
 testePalavra :: Automato -> String -> IO ResultadoTeste
-testePalavra Automato{..} palavraTestada = -- MUDANÇA: Usando RecordWildCards
+testePalavra Automato{..} palavraTestada = -- Usando RecordWildCards
   let
-    -- 'alfabeto', 'grafo', 'estadoInicial', 'mapaDeNos', 
-    -- 'estadosFinais', 'mapaDeRotulos' são variáveis locais
     simbolos = map (:[]) palavraTestada
     invalida = any (\s -> not (member s alfabeto)) simbolos
     
   in if invalida
      then return $ ResultadoTeste palavraTestada False [["Palavra fora do alfabeto"]]
      else do
-       -- 1. Encontrar o nó inicial e calcular seu fecho-épsilon
+       -- 1. Encontrar o nó inicial (DE FORMA SEGURA)
        let g = grafo
-       let Just noInicial = Map.lookup estadoInicial mapaDeNos
-       let estadosIniciais = fechoEpsilon g (Set.singleton noInicial)
-       
-       -- 2. Simular a palavra usando foldl'
-       let (estadosFinaisSimulados, historico) =
-             foldl' (passoSimulacao g)
-                    (estadosIniciais, [estadosIniciais])
-                    simbolos
-       
-       -- 3. Verificar se algum dos estados finais está no conjunto de estados de aceitação
-       let nosFinais = Set.fromList $ mapMaybe (\s -> Map.lookup s mapaDeNos) (Set.toList estadosFinais)
-       let aceitaPalavra = not $ Set.null $ Set.intersection estadosFinaisSimulados nosFinais
-       
-       -- 4. Formatar o histórico de 'Set Node' para '[[String]]'
-       let historicoFormatado = map (Set.toList . Set.map (\n -> fromJust (Map.lookup n mapaDeRotulos))) (reverse historico)
-       
-       return $ ResultadoTeste palavraTestada aceitaPalavra historicoFormatado
+       case Map.lookup estadoInicial mapaDeNos of
+         
+         Nothing -> do
+           -- ERRO: O estado inicial do JSON não foi encontrado no grafo
+           let msg = [["Erro: Estado inicial '" ++ estadoInicial ++ "' não encontrado nas transições."]]
+           return $ ResultadoTeste palavraTestada False msg
+
+         Just noInicial -> do
+           -- SUCESSO: O estado inicial existe, continue a simulação
+           
+           -- 2. Calcular o fecho-épsilon inicial
+           let estadosIniciais = fechoEpsilon g (Set.singleton noInicial)
+           
+           -- 3. Simular a palavra usando foldl'
+           let (estadosFinaisSimulados, historico) =
+                 foldl' (passoSimulacao g)
+                        (estadosIniciais, [estadosIniciais])
+                        simbolos
+           
+           -- 4. Verificar se algum dos estados finais está no conjunto de aceitação
+           let nosFinais = Set.fromList $ mapMaybe (\s -> Map.lookup s mapaDeNos) (Set.toList estadosFinais)
+           let aceitaPalavra = not $ Set.null $ Set.intersection estadosFinaisSimulados nosFinais
+           
+           -- 5. Formatar o histórico
+           let historicoFormatado = map (Set.toList . Set.map (\n -> fromJust (Map.lookup n mapaDeRotulos))) (reverse historico)
+           
+           return $ ResultadoTeste palavraTestada aceitaPalavra historicoFormatado
   where
     -- Função auxiliar para o fold
     passoSimulacao g (estadosAtuais, historico) simbolo =

@@ -1,102 +1,133 @@
-# **Simulador de Autômatos**
+# **Simulador de Autômatos em Haskell**
 
-O projeto `Simulador de Autômatos` é uma implementação em Haskell para manipulação e simulação de autômatos finitos determinísticos (AFD). Ele combina o módulo `Automato`, que fornece funcionalidades essenciais para criar, testar e gerenciar AFDs, com um programa principal (`Main`) que oferece uma interface interativa via console. O simulador suporta leitura de arquivos JSON, testes de palavras e exportação de resultados, sendo ideal para estudos ou experimentos com autômatos.
+O projeto `Simulador de Autômatos` é uma implementação robusta em Haskell para a manipulação e simulação de **Autômatos Finitos Não-Determinísticos (AFND)**, com suporte completo a **transições-épsilon ($\epsilon$)**.
 
-## **Índice**
-1. [Descrição](#descrição)
-2. [Funcionalidades](#funcionalidades)
-3. [Estrutura do Projeto](#estrutura-do-projeto)
-4. [Dependências](#dependências)
+Utilizando a biblioteca **`fgl` (Functional Graph Library)** como seu núcleo, o simulador é capaz de modelar e executar autômatos complexos. Ele combina o módulo `Automato`, que fornece a lógica de simulação, com o módulo `Menu`, que oferece uma interface de console interativa.
 
----
+O simulador permite carregar dinamicamente autômatos de arquivos `.json`, testar palavras de arquivos `.txt` e salvar os resultados da simulação.
 
-## **Descrição**
+## **Visão Geral**
 
-Este projeto implementa um simulador interativo para autômatos finitos determinísticos (AFD) em Haskell. O módulo `Automato` encapsula as operações principais, como criação de AFDs a partir de arquivos JSON, teste de palavras e salvamento de resultados, enquanto o módulo `Main` oferece uma interface de usuário simples e funcional. O simulador é projetado para ser modular, reutilizável e fácil de entender, com suporte a entrada/saída em formatos JSON e TXT.
+Este projeto implementa um simulador interativo para Autômatos Finitos Não-Determinísticos (AFND) em Haskell. O núcleo do simulador é construído sobre um grafo (`fgl`), permitindo-lhe modelar e executar a lógica complexa de AFNDs, incluindo:
 
----
+  - Simulação de múltiplos caminhos de execução simultaneamente.
+  - Processamento de transições-épsilon ($\epsilon$) para calcular o "fecho-épsilon" antes de consumir cada símbolo da palavra.
 
-## **Funcionalidades**
+A interface do usuário, contida no módulo `Menu`, permite a **seleção dinâmica de arquivos** de um diretório, tornando o uso flexível e prático.
 
-### **1. Carregar Autômato**
-- Carrega a configuração de um AFD a partir de um arquivo JSON (`automato.json` por padrão).
-- Componentes suportados:
-  - Alfabeto (conjunto de símbolos).
-  - Estado inicial.
-  - Conjunto de estados finais.
-  - Tabela de transições.
+-----
 
-### **2. Testar Palavras**
-- Permite testar palavras individualmente ou em lote (via arquivo `palavras.txt`).
-- Resultados incluem:
-  - Palavra testada.
-  - Status de aceitação (`True` ou `False`).
-  - Lista de estados percorridos.
+## **Funcionalidades Principais**
 
-### **3. Visualizar Informações**
-- Exibe no console os detalhes do AFD carregado:
-  - Alfabeto.
-  - Estado inicial.
-  - Estados finais.
-  - Transições.
+### **1. Carregamento Dinâmico de Arquivos**
 
-### **4. Salvar Resultados**
-- Exporta os resultados dos testes para um arquivo JSON especificado pelo usuário.
-- Resultados salvos contêm:
-  - Palavra testada.
-  - Status de aceitação.
-  - Estados percorridos.
+O menu interativo permite ao usuário navegar e selecionar arquivos dinamicamente:
 
-### **5. Interface Interativa**
-- Menu de opções no console:
-  - Carregar autômato.
-  - Visualizar informações.
-  - Testar palavras (individual ou em lote).
-  - Salvar resultados.
-  - Sair.
+  - **Opção 1 (Carregar Autômato):** Lista e carrega arquivos `.json` de um diretório de autômatos (ex: `exemplos/`).
+  - **Opção 3.2 (Testar em Lote):** Lista e carrega arquivos `.txt` contendo listas de palavras para teste.
 
----
+### **2. Teste de Palavras**
+
+  - Permite testar palavras individualmente ou em lote (via seleção de arquivo `.txt`).
+  - Os resultados da simulação são detalhados, mostrando o **conjunto de estados ativos** em cada etapa do processo.
+
+### **3. Visualizar e Salvar Resultados**
+
+  - **Visualizar Informações:** Exibe no console os detalhes do AFND carregado (alfabeto, estados, finais e todas as transições, incluindo $\epsilon$).
+  - **Salvar Resultados:** Exporta os resultados dos testes (palavra, status de aceitação e histórico de estados) para um arquivo JSON especificado pelo usuário.
+
+-----
+
+## **Formato do JSON de Entrada**
+
+Para suportar a natureza flexível dos AFNDs, o formato de entrada é uma lista plana de transições.
+
+**Importante:** Transições-épsilon ($\epsilon$) são definidas usando `"simbolo": null` no arquivo JSON.
+
+### Exemplo de JSON AFND
+
+```json
+{
+  "alfabeto": ["0", "1"],
+  "estadoInicial": "q0",
+  "estadosFinais": ["q3"],
+  "transicoes": [
+    { "origem": "q0", "simbolo": null, "destino": "q1" },
+    { "origem": "q0", "simbolo": null, "destino": "q2" },
+    { "origem": "q1", "simbolo": "0", "destino": "q1" },
+    { "origem": "q1", "simbolo": "0", "destino": "q3" },
+    { "origem": "q2", "simbolo": "1", "destino": "q2" },
+    { "origem": "q2", "simbolo": "1", "destino": "q3" },
+    { "origem": "q3", "simbolo": "0", "destino": "q3" },
+    { "origem": "q3", "simbolo": "1", "destino": "q3" }
+  ]
+}
+```
+
+### Exemplo de JSON AFD
+
+```json
+{
+  "alfabeto": ["0", "1"],
+  "estadoInicial": "q0",
+  "estadosFinais": ["q2"],
+  "transicoes": [
+    { "origem": "q0", "simbolo": "0", "destino": "q1" },
+    { "origem": "q0", "simbolo": "1", "destino": "q0" },
+    { "origem": "q1", "simbolo": "0", "destino": "q1" },
+    { "origem": "q1", "simbolo": "1", "destino": "q2" },
+    { "origem": "q2", "simbolo": "0", "destino": "q1" },
+    { "origem": "q2", "simbolo": "1", "destino": "q0" }
+  ]
+}
+```
+
+-----
 
 ## **Estrutura do Projeto**
 
-O projeto é composto por dois módulos principais:
+O projeto é dividido em três módulos principais:
 
-### **1. Módulo `Automato`**
-- Define as operações fundamentais para manipulação de AFDs.
-- **Tipos**:
-  - `Automato`: Estrutura que representa um AFD.
-    - `alfabeto`: `Set String` (conjunto de símbolos).
-    - `estadoInicial`: `String` (estado inicial).
-    - `estadosFinais`: `Set String` (estados finais).
-    - `transicoes`: `Map String (Map String String)` (tabela de transições).
-  - `ResultadoTeste`: Estrutura para resultados de teste.
-    - `palavra`: `String` (palavra testada).
-    - `aceita`: `Bool` (aceitação).
-    - `estadosPercorridos`: `[String]` (estados visitados).
-- **Funções principais**:
-  - `criarAutomato :: FilePath -> IO Automato`: Cria um AFD a partir de um arquivo JSON.
-  - `imprimirAutomato :: Automato -> String`: Gera uma representação textual do AFD.
-  - `testePalavra :: Automato -> String -> IO ResultadoTeste`: Testa uma palavra no AFD.
-  - `salvarResultados :: FilePath -> [ResultadoTeste] -> IO ()`: Salva resultados em JSON.
+### **1. Módulo `Main` (`Main.hs`)**
 
-### **2. Módulo `Main`**
-- Implementa a interface interativa do simulador.
-- **Funções principais**:
-  - `main :: IO ()`: Inicia o simulador.
-  - `mainLoop :: Maybe Automato -> IO ()`: Controla o loop do menu interativo.
-  - `carregarJSON :: IO (Maybe Automato)`: Carrega o AFD do arquivo padrão.
-  - `testarPalavras :: Maybe Automato -> IO (Maybe Automato)`: Testa palavras individualmente ou em lote.
-  - `salvarTestes :: Maybe Automato -> IO (Maybe Automato)`: Salva resultados dos testes.
-- **Arquivos padrão**:
-  - `automato.json`: Configuração do AFD.
-  - `palavras.txt`: Lista de palavras para teste (uma por linha).
+  - Ponto de entrada (entrypoint) do programa.
+  - Sua única responsabilidade é importar e chamar a função `iniciarMenu` do módulo `Menu`.
 
----
+### **2. Módulo `Menu` (`Menu.hs`)**
+
+  - Implementa toda a interface de usuário interativa via console.
+  - Gerencia o estado da aplicação (o `Maybe Automato` carregado).
+  - Funções principais:
+      - `iniciarMenu :: IO ()`: Inicia o programa e o loop principal.
+      - `mainLoop :: Maybe Automato -> IO ()`: Controla o loop do menu.
+      - `selecionarArquivo :: FilePath -> String -> IO (Maybe FilePath)`: Função genérica para listar e selecionar arquivos (`.json` ou `.txt`).
+
+### **3. Módulo `Automato` (`Automato.hs`)**
+
+  - O "cérebro" do simulador. Define as estruturas de dados e a lógica de simulação do AFND.
+  - **Tipos**:
+      - `Automato`: Representa o autômato.
+          - `grafo :: Gr String (Maybe String)`: O grafo `fgl` onde os nós são `String` (nomes dos estados) e as arestas são `Maybe String` (símbolos ou `Nothing` para $\epsilon$).
+          - `mapaDeNos :: Map String Node`: Mapeamento de nomes de estado para IDs de nó do `fgl`.
+      - `ResultadoTeste`:
+          - `estadosPercorridos :: [[String]]`: O histórico de conjuntos de estados ativos (uma lista de listas de strings).
+      - `JsonAutomato`: Tipo auxiliar usado para decodificar a estrutura de JSON.
+  - **Funções principais**:
+      - `criarAutomato :: FilePath -> IO Automato`: Lê o JSON, constrói o grafo `fgl` e retorna um `Automato`.
+      - `testePalavra :: Automato -> String -> IO ResultadoTeste`: Executa a simulação completa do AFND, gerenciando conjuntos de estados e fechos-épsilon.
+      - `fechoEpsilon :: ... -> Set Node`: Lógica interna para calcular o fecho-épsilon.
+
+-----
 
 ## **Dependências**
 
 O projeto requer as seguintes bibliotecas Haskell:
-- `aeson`: Para manipulação de JSON.
-- `bytestring`: Para operações com arquivos binários.
-- `containers`: Para uso de `Set` e `Map`.
-- `base`: Biblioteca padrão (inclui `Control.Monad` para `forM` e `forM_`).
+
+  - **`fgl`**: A Functional Graph Library, núcleo da implementação do grafo.
+  - **`aeson`**: Para manipulação (parse e encode) de JSON.
+  - **`aeson-pretty`**: Para salvar os resultados em JSON formatado.
+  - **`bytestring`**: Para ler e escrever arquivos.
+  - **`containers`**: Para uso de `Data.Set` e `Data.Map`.
+  - **`directory`**: Para listar o conteúdo de diretórios (usado no `Menu`).
+  - **`filepath`**: Para manipular caminhos de arquivo e extensões (usado no `Menu`).
+  - `base`: Biblioteca padrão.
