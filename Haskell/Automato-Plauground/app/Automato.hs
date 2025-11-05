@@ -26,8 +26,6 @@ import Data.Map.Strict (Map) -- Para representar transições como um mapa
 import qualified Data.Map.Strict as Map
 import Data.List (intercalate, foldl') -- Import para juntar strings e usar foldl estrito
 import Data.Maybe (fromJust, mapMaybe) -- Funções auxiliares
-
--- MUDANÇA: Importações da biblioteca FGL (Functional Graph Library)
 import Data.Graph.Inductive.Graph (Node, LEdge, mkGraph, labNodes, lsuc, lab) -- Funções principais
 import Data.Graph.Inductive.PatriciaTree (Gr) -- Implementação concreta eficiente
 import Data.Graph.Inductive.Query.DFS (dfs) -- Para o fecho-épsilon
@@ -56,21 +54,18 @@ data Automato = Automato
   , mapaDeNos      :: Map String Node    -- Mapeia "q0" -> 1 (ID interno do FGL)
   , mapaDeRotulos  :: Map Node String    -- Mapeia 1 -> "q0"
   } deriving (Show, Generic)
-  
--- 'Automato' não é mais uma instância de 'FromJSON' diretamente.
--- Nós o construiremos a partir do 'JsonAutomato'.
 
 data ResultadoTeste = ResultadoTeste
   { palavra          :: String
   , aceita           :: Bool
-  , estadosPercorridos :: [[String]] -- MUDANÇA: Agora é uma lista de *conjuntos* de estados
+  , estadosPercorridos :: [[String]]
   } deriving (Show, Generic)
 
 instance ToJSON ResultadoTeste -- Isso continua funcionando
 
 -- Constrói o tipo 'Automato' (com grafo FGL) a partir do 'JsonAutomato'
 converterParaGrafo :: JsonAutomato -> Automato
-converterParaGrafo JsonAutomato{..} = -- MUDANÇA: Usando RecordWildCards
+converterParaGrafo JsonAutomato{..} =
   let
     -- 1. Coletar todos os nomes de estados únicos
     --    'transicoes', 'estadoInicial', 'estadosFinais' são variáveis locais
@@ -124,7 +119,7 @@ criarAutomato arquivo = do
     Nothing       -> error "Erro ao carregar o autômato do JSON"
 
 imprimirAutomato :: Automato -> String
-imprimirAutomato Automato{..} = -- MUDANÇA: Usando RecordWildCards
+imprimirAutomato Automato{..} =
   let
     -- 'alfabeto', 'estadoInicial', 'estadosFinais', 'grafo' são variáveis locais
     formatarConjunto :: Set.Set String -> String

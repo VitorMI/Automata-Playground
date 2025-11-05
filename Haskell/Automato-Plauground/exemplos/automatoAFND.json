@@ -1,0 +1,17 @@
+{
+  "alfabeto": ["0", "1"],
+  "estadoInicial": "q0",
+  "estadosFinais": ["q_final"],
+  "transicoes": [
+    
+    { "origem": "q0", "simbolo": null, "destino": "q_start" },
+
+    { "origem": "q_start", "simbolo": "0", "destino": "q_loop" },
+    
+    { "origem": "q_loop", "simbolo": "0", "destino": "q_loop" },
+    
+    { "origem": "q_loop", "simbolo": "1", "destino": "q_loop" },
+    
+    { "origem": "q_loop", "simbolo": "1", "destino": "q_final" }
+  ]
+}

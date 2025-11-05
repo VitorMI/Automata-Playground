@@ -1,0 +1,11 @@
+{
+  "alfabeto": ["0", "1"],
+  "estadoInicial": "par",
+  "estadosFinais": ["par"],
+  "transicoes": [
+    { "origem": "par", "simbolo": "0", "destino": "impar" },
+    { "origem": "par", "simbolo": "1", "destino": "par" },
+    { "origem": "impar", "simbolo": "0", "destino": "par" },
+    { "origem": "impar", "simbolo": "1", "destino": "impar" }
+  ]
+}
