@@ -1,9 +1,8 @@
 -- Define o módulo Menu e exporta apenas a função 'iniciarMenu'
 module Menu (iniciarMenu) where
 
--- Importações do núcleo do Automato
 import Automato
-  ( Automato,
+  ( Automato(..),
     ResultadoTeste (..),
     criarAutomato,
     imprimirAutomato,
@@ -11,7 +10,9 @@ import Automato
     testePalavra,
   )
 
--- Importações padrão do Haskell
+-- Importação do módulo de Visualização Gráfica
+import Visual (abrirVisualizacao)
+
 import Control.Monad (forM, forM_)
 import System.IO (hFlush, stdout)
 import System.Directory (doesDirectoryExist, listDirectory)
@@ -19,44 +20,42 @@ import System.FilePath ((</>), takeExtension)
 import Data.List (sort, intercalate)
 import Text.Read (readMaybe)
 
--- --- Caminhos Padrão ---
--- Diretórios para busca de arquivos
 defaultJsonDir :: FilePath
 defaultJsonDir = "exemplos"
 
 defaultPalavrasDir :: FilePath
 defaultPalavrasDir = "exemplos"
 
--- | Função principal do menu, a ser chamada pelo Main.hs
+-- | Função principal do menu
 iniciarMenu :: IO ()
 iniciarMenu = do
   putStrLn "==============================="
-  putStrLn "   Simulador de Autômatos"
+  putStrLn "   Simulador de Autômatos (GUI)"
   putStrLn "==============================="
   putStrLn "Bem-vindo!"
-  putStrLn "Nenhum autômato carregado."
   -- Inicia o loop com o estado inicial (nenhum autômato carregado)
   mainLoop Nothing
 
--- | Loop principal do menu, agora privado a este módulo.
--- Ele gerencia o estado do autômato (Maybe Automato).
+-- | Loop principal do menu
 mainLoop :: Maybe Automato -> IO ()
 mainLoop mAutomato = do
   printHeader "MENU PRINCIPAL"
   putStrLn "1. Carregar autômato (.json)"
-  putStrLn "2. Visualizar informações do autômato"
-  putStrLn "3. Testar palavra(s)"
-  putStrLn "4. Salvar resultados dos testes em JSON"
-  putStrLn "5. Sair"
+  putStrLn "2. Visualizar informações (Terminal)"
+  putStrLn "3. Visualizar estrutura gráfica (Raylib)"
+  putStrLn "4. Testar palavra(s)"
+  putStrLn "5. Salvar resultados dos testes em JSON"
+  putStrLn "6. Sair"
   putStr "Escolha uma opção: "
   hFlush stdout
   opcao <- getLine
   case opcao of
     "1" -> carregarJSON mAutomato >>= mainLoop
     "2" -> visualizarInfo mAutomato >>= mainLoop
-    "3" -> testarPalavras mAutomato >>= mainLoop
-    "4" -> salvarTestes mAutomato >>= mainLoop
-    "5" -> putStrLn "\nSaindo... Até logo!"
+    "3" -> visualizarGrafico mAutomato >>= mainLoop
+    "4" -> testarPalavras mAutomato >>= mainLoop
+    "5" -> salvarResultadosMenu mAutomato >>= mainLoop
+    "6" -> putStrLn "\nSaindo... Até logo!"
     _   -> do
       printError "Opção inválida. Tente novamente."
       mainLoop mAutomato
@@ -76,32 +75,37 @@ carregarJSON automatoAntigo = do
       
     Just caminho -> do
       putStrLn $ "\nCarregando autômato de: " ++ caminho
-      -- TODO: Adicionar tratamento de exceção para 'criarAutomato'
       novoAutomato <- criarAutomato caminho
       printSuccess "Autômato carregado com sucesso!"
       return (Just novoAutomato)
 
--- | Visualiza informações do autômato
+-- | Visualiza informações no terminal
 visualizarInfo :: Maybe Automato -> IO (Maybe Automato)
 visualizarInfo Nothing = do
-  printHeader "2. VISUALIZAR AUTÔMATO"
   printError "Nenhum autômato carregado."
-  putStrLn "Por favor, carregue um autômato primeiro (Opção 1)."
   return Nothing
 visualizarInfo (Just automato) = do
-  -- A própria função 'imprimirAutomato' já tem a formatação
   putStrLn $ imprimirAutomato automato
+  return (Just automato)
+
+-- | Abre a janela da Raylib para ver apenas a estrutura
+visualizarGrafico :: Maybe Automato -> IO (Maybe Automato)
+visualizarGrafico Nothing = do
+  printError "Nenhum autômato carregado."
+  return Nothing
+visualizarGrafico (Just automato) = do
+  putStrLn "Abrindo visualização gráfica... Feche a janela para voltar ao menu."
+  -- Passa 'Nothing' para o resultado para indicar que não há histórico de estados para animar
+  abrirVisualizacao automato Nothing
   return (Just automato)
 
 -- | Testa palavras individualmente ou em lote
 testarPalavras :: Maybe Automato -> IO (Maybe Automato)
 testarPalavras Nothing = do
-  printHeader "3. TESTAR PALAVRAS"
   printError "Nenhum autômato carregado."
-  putStrLn "Por favor, carregue um autômato primeiro (Opção 1)."
   return Nothing
 testarPalavras (Just automato) = do
-  printHeader "3. TESTAR PALAVRAS"
+  printHeader "4. TESTAR PALAVRAS"
   putStrLn "1. Palavra individual"
   putStrLn "2. Arquivo de palavras (.txt)"
   putStr "Escolha uma opção: "
@@ -109,97 +113,83 @@ testarPalavras (Just automato) = do
   opcao <- getLine
   case opcao of
     "1" -> do
-      putStr "Digite a palavra a ser testada: "
+      putStr "Digite a palavra: "
       hFlush stdout
       palavraTestada <- getLine
       resultado <- testePalavra automato palavraTestada
-      -- Imprime o resultado formatado
       putStrLn $ formatarResultado resultado
+      
+      -- TEMPORARIO
+      putStr "Deseja ver a simulação passo a passo na GUI? (s/n): "
+      hFlush stdout
+      confirm <- getLine
+      if confirm == "s" || confirm == "S"
+        then abrirVisualizacao automato (Just resultado)
+        else return ()
+      
       return (Just automato)
       
     "2" -> do
-      putStrLn $ "\nProcurando arquivos .txt em '" ++ defaultPalavrasDir ++ "'..."
       maybeCaminho <- selecionarArquivo defaultPalavrasDir ".txt"
-      
       case maybeCaminho of
-        Nothing -> do
-          putStrLn "Seleção de arquivo cancelada."
-          return (Just automato)
-          
+        Nothing -> return (Just automato)
         Just caminhoTxt -> do
-          putStrLn $ "\nCarregando palavras do arquivo: " ++ caminhoTxt
           conteudo <- readFile caminhoTxt
           let palavras = lines conteudo
-          
           resultados <- forM palavras (testePalavra automato)
-          
           printSeparator
-          putStrLn $ "Resultados do teste para '" ++ caminhoTxt ++ "':"
-          -- Imprime todos os resultados formatados
           forM_ resultados (putStrLn . formatarResultado)
           printSeparator
           return (Just automato)
-          
     _ -> do
       printError "Opção inválida."
       return (Just automato)
 
--- | Salva os resultados dos testes em um arquivo JSON
-salvarTestes :: Maybe Automato -> IO (Maybe Automato)
-salvarTestes Nothing = do
-  printHeader "4. SALVAR RESULTADOS"
-  printError "Nenhum autômato carregado."
-  return Nothing
-salvarTestes (Just automato) = do
-  printHeader "4. SALVAR RESULTADOS"
-  putStrLn "Digite as palavras a serem testadas (separadas por espaço): "
+-- | Salva os resultados (Opção 5)
+salvarResultadosMenu :: Maybe Automato -> IO (Maybe Automato)
+salvarResultadosMenu Nothing = printError "Nenhum autômato carregado." >> return Nothing
+salvarResultadosMenu (Just automato) = do
+  printHeader "5. SALVAR RESULTADOS"
+  putStr "Palavras para testar (separadas por espaço): "
   hFlush stdout
   entrada <- getLine
   let palavras = words entrada
   resultados <- forM palavras (testePalavra automato)
-  putStr "Digite o nome do arquivo para salvar os resultados (ex: resultados.json): "
+  putStr "Nome do arquivo (ex: resultados.json): "
   hFlush stdout
   arquivo <- getLine
   salvarResultados arquivo resultados
-  printSuccess $ "Resultados salvos com sucesso em " ++ arquivo
+  printSuccess "Resultados salvos!"
   return (Just automato)
 
--- --- Funções Auxiliares de Formatação ---
 formatarResultado :: ResultadoTeste -> String
 formatarResultado resultado =
   unlines [
     "---------------------------------------",
-    "  Palavra: " ++ show (palavra resultado), -- 'show' para tratar bem a palavra vazia ""
-    "  Aceita: " ++ show (aceita resultado),
-    "  Histórico de Estados: " ++ formatarHistorico (estadosPercorridos resultado),
+    "  Palavra: " ++ show (palavra resultado),
+    "  Aceita: " ++ (if aceita resultado then "SIM" else "NÃO"),
+    "  Histórico: " ++ formatarHistorico (estadosPercorridos resultado),
     "---------------------------------------"
   ]
 
---   Converte [["q0","q1"],["q2"]] em "{q0,q1} -> {q2}"
 formatarHistorico :: [[String]] -> String
 formatarHistorico historico =
   intercalate " -> " $ map formatarConjuntoEstados historico
   where
-    formatarConjuntoEstados :: [String] -> String
-    formatarConjuntoEstados [] = "{}" -- Caso de um caminho "morto"
-    -- Ordena os estados para uma saída consistente (ex: {q0,q1} e não {q1,q0})
     formatarConjuntoEstados estados = "{" ++ intercalate "," (sort estados) ++ "}"
 
 printHeader :: String -> IO ()
-printHeader titulo = putStrLn $ "\n--- " ++ titulo ++ " ---"
+printHeader titulo = putStrLn $ "\n=== " ++ titulo ++ " ==="
 
 printError :: String -> IO ()
 printError msg = putStrLn $ "[ERRO] " ++ msg
 
 printSuccess :: String -> IO ()
-printSuccess msg = putStrLn $ "[SUCESSO] " ++ msg
+printSuccess msg = putStrLn $ "[OK] " ++ msg
 
 printSeparator :: IO ()
 printSeparator = putStrLn "---------------------------------------"
 
--- --- Funções do Seletor de Arquivos ---
-
--- | Função genérica para listar e selecionar um arquivo com uma extensão específica.
 selecionarArquivo :: FilePath -> String -> IO (Maybe FilePath)
 selecionarArquivo pasta extensao = do
     existe <- doesDirectoryExist pasta
@@ -209,41 +199,27 @@ selecionarArquivo pasta extensao = do
         return Nothing
     else do
         nomesArquivos <- listDirectory pasta
-        let arquivosFiltrados = sort $ filter (\nome -> takeExtension nome == extensao) nomesArquivos
-        
-        if null arquivosFiltrados
+        let filtrados = sort $ filter (\nome -> takeExtension nome == extensao) nomesArquivos
+        if null filtrados
         then do
             printError $ "Nenhum arquivo '" ++ extensao ++ "' encontrado em '" ++ pasta ++ "'."
             return Nothing
         else do
-            putStrLn $ "\nPor favor, selecione um arquivo '" ++ extensao ++ "':"
-            let menu = zip [1..] arquivosFiltrados
-            
-            forM_ menu $ \(index, nome) -> do
-                putStrLn $ "  " ++ show (index :: Int) ++ ". " ++ nome
-
+            putStrLn $ "\nArquivos disponíveis em '" ++ pasta ++ "':"
+            let menu = zip [1..] filtrados
+            forM_ menu $ \(index, nome) -> putStrLn $ "  " ++ show (index :: Int) ++ ". " ++ nome
             putStrLn "  0. Sair / Cancelar"
-            
             obterSelecao pasta menu
 
--- | Função auxiliar para tratar a entrada numérica do usuário para o menu de arquivos.
 obterSelecao :: FilePath -> [(Int, FilePath)] -> IO (Maybe FilePath)
 obterSelecao pasta menu = do
-    putStr "Digite o número (ou 0 para cancelar): "
+    putStr "Escolha o número: "
     hFlush stdout
     input <- getLine
-    
     case readMaybe input :: Maybe Int of
-        Nothing -> do
-            printError "Entrada inválida. Por favor, digite um número."
-            obterSelecao pasta menu
-        Just 0 -> do
-            putStrLn "Seleção cancelada."
-            return Nothing
+        Nothing -> printError "Digite um número válido." >> obterSelecao pasta menu
+        Just 0 -> return Nothing
         Just index ->
             case lookup index menu of
-                Just arquivoSelecionado ->
-                    return $ Just (pasta </> arquivoSelecionado)
-                Nothing -> do
-                    printError "Número inválido. Tente novamente."
-                    obterSelecao pasta menu
+                Just arquivo -> return $ Just (pasta </> arquivo)
+                Nothing -> printError "Opção inválida." >> obterSelecao pasta menu
